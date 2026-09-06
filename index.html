@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="弁理士試験対策用の忘却曲線ベースの暗記学習アプリ">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="弁理士暗記">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23667eea' width='192' height='192'/><text x='50%' y='50%' font-size='120' font-weight='bold' fill='white' text-anchor='middle' dy='.3em' font-family='Arial'>暗</text></svg>">
+    <link rel="manifest" href="manifest.json">
+    <title>弁理士試験 暗記アプリ</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>弁理士試験 暗記アプリ</h1>
+            <nav>
+                <button class="nav-btn active" data-tab="learn">学習</button>
+                <button class="nav-btn" data-tab="manage">データ管理</button>
+            </nav>
+        </header>
+
+        <!-- 学習タブ -->
+        <main id="learn-tab" class="tab-content active">
+            <div class="learning-container">
+                <!-- 復習優先度表示 -->
+                <div class="spaced-repetition-info">
+                    <div class="info-item">
+                        <span class="info-label">🔴 今日復習</span>
+                        <span class="info-count" id="todayCount">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">🟡 近日中</span>
+                        <span class="info-count" id="soonCount">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">🟢 新規</span>
+                        <span class="info-count" id="newCount">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">⭐ マスター済み</span>
+                        <span class="info-count" id="masteredCount">0</span>
+                    </div>
+                </div>
+
+                <!-- カード表示エリア -->
+                <div class="card-section">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="card-counter"><span id="currentCard">1</span> / <span id="totalCards">0</span></p>
+
+                    <div class="card" id="mainCard">
+                        <div class="card-content">
+                            <p class="card-label" id="cardLabel">条文・判例を選択してください</p>
+                            <h2 id="cardTitle">タイトル</h2>
+                            <div id="cardDetail" class="card-detail">内容はこちらに表示されます</div>
+                        </div>
+                        <p class="flip-hint">クリックして反転</p>
+                        <p class="review-schedule" id="reviewSchedule"></p>
+                    </div>
+
+                    <!-- 詳細情報 -->
+                    <div class="detail-info" id="detailInfo" style="display:none;">
+                        <div class="detail-section">
+                            <h3>主体（主权者）</h3>
+                            <p id="detailSubject"></p>
+                        </div>
+                        <div class="detail-section">
+                            <h3>客体（対象）</h3>
+                            <p id="detailObject"></p>
+                        </div>
+                        <div class="detail-section">
+                            <h3>時期（期間・期限）</h3>
+                            <p id="detailTiming"></p>
+                        </div>
+                        <div class="detail-section">
+                            <h3>手続</h3>
+                            <p id="detailProcedure"></p>
+                        </div>
+                        <div class="detail-section">
+                            <h3>関連判例</h3>
+                            <p id="detailCaselaw"></p>
+                        </div>
+                        <div class="detail-section">
+                            <h3>備考</h3>
+                            <p id="detailNotes"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- コントロールパネル -->
+                <div class="control-panel">
+                    <div class="category-select">
+                        <label for="categoryFilter">カテゴリ選択：</label>
+                        <select id="categoryFilter">
+                            <option value="">すべてを表示</option>
+                        </select>
+                        <select id="reviewFilter" class="review-filter">
+                            <option value="">すべてを表示</option>
+                            <option value="today">今日復習</option>
+                            <option value="soon">近日中</option>
+                            <option value="new">新規カード</option>
+                            <option value="mastered">マスター済み</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="prevBtn" class="btn btn-secondary">← 前へ</button>
+                        <button id="shuffleBtn" class="btn btn-info">🔀 シャッフル</button>
+                        <button id="nextBtn" class="btn btn-primary">次へ →</button>
+                    </div>
+
+                    <div class="mark-buttons">
+                        <button id="markHardBtn" class="btn btn-warning">😰 忘れた</button>
+                        <button id="markGoodBtn" class="btn btn-success">✓ 理解した</button>
+                        <button id="markEasyBtn" class="btn btn-info">😊 簡単</button>
+                    </div>
+
+                    <div class="stats">
+                        <p>理解済み: <span id="goodCount">0</span> | 復習必要: <span id="badCount">0</span></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- データ管理タブ -->
+        <main id="manage-tab" class="tab-content">
+            <div class="manage-container">
+                <section class="form-section">
+                    <h2>条文・判例を追加</h2>
+                    <form id="addForm">
+                        <div class="form-group">
+                            <label for="category">カテゴリ *</label>
+                            <select id="category" required>
+                                <option value="">選択してください</option>
+                                <option value="patent">特許法</option>
+                                <option value="utility">実用新案法</option>
+                                <option value="design">意匠法</option>
+                                <option value="trademark">商標法</option>
+                                <option value="copyright">著作権法</option>
+                                <option value="other">その他</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="type">タイプ *</label>
+                            <select id="type" required>
+                                <option value="">選択してください</option>
+                                <option value="provision">条文</option>
+                                <option value="caselaw">判例</option>
+                                <option value="pastquestion">過去問題</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="title">タイトル/条文番号 *</label>
+                            <input type="text" id="title" placeholder="例：特許法1条、進歩性に関する判例" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="detail">内容/定義 *</label>
+                            <textarea id="detail" placeholder="条文の内容や判例の要点を記入" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="subject">主体（主権者）</label>
+                            <input type="text" id="subject" placeholder="例：出願人、発明者、特許庁">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="object">客体（対象）</label>
+                            <input type="text" id="object" placeholder="例：発明、実用新案、意匠">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="timing">時期（期間・期限）</label>
+                            <input type="text" id="timing" placeholder="例：出願から○年以内、登録後△年以内">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="procedure">手続</label>
+                            <input type="text" id="procedure" placeholder="例：書面により、特許庁に申請">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="caselaw">関連判例</label>
+                            <input type="text" id="caselaw" placeholder="例：最判 昭和50年○月○日">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="notes">備考</label>
+                            <textarea id="notes" placeholder="その他の注釈や重要なポイント"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">追加</button>
+                    </form>
+                </section>
+
+                <section class="data-section">
+                    <h2>保存されたデータ</h2>
+                    <div class="controls">
+                        <input type="text" id="searchBox" placeholder="検索...">
+                        <button id="exportBtn" class="btn btn-info">📥 JSON形式でエクスポート</button>
+                        <button id="importJsonBtn" class="btn btn-info">📤 JSON形式でインポート</button>
+                        <button id="importCsvBtn" class="btn btn-info">📊 CSV形式でインポート</button>
+                        <button id="downloadTemplateBtn" class="btn btn-info">📋 CSVテンプレートをダウンロード</button>
+                        <input type="file" id="importJsonFile" accept=".json" style="display:none;">
+                        <input type="file" id="importCsvFile" accept=".csv" style="display:none;">
+                        <button id="clearBtn" class="btn btn-danger">🗑️ すべて削除</button>
+                    </div>
+
+                    <div id="dataList" class="data-list"></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
