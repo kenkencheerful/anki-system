@@ -55,6 +55,8 @@ function initializeEventListeners() {
         document.getElementById('importCsvFile').click();
     });
     document.getElementById('importCsvFile').addEventListener('change', importCsvData);
+    document.getElementById('toggleCsvTextInputBtn').addEventListener('click', toggleCsvTextInput);
+    document.getElementById('importCsvTextBtn').addEventListener('click', importCsvFromText);
     document.getElementById('downloadTemplateBtn').addEventListener('click', downloadCsvTemplate);
     document.getElementById('clearBtn').addEventListener('click', clearAllData);
 }
@@ -786,26 +788,7 @@ function importCsvData(e) {
         try {
             const csvText = event.target.result;
             const csvData = csvToJson(csvText);
-
-            // 既存データとマージするか確認
-            if (allData.length > 0) {
-                if (!confirm(`${csvData.length}件のデータを既存のデータに追加しますか？（キャンセルで上書きします）`)) {
-                    allData = [];
-                    cardStats = {};
-                }
-            }
-
-            // インポート
-            allData.push(...csvData);
-            saveData();
-            filteredData = [...allData];
-            updateCategoryFilter();
-            renderDataList();
-            updateTotalCards();
-            displayCard(0);
-            switchTab('manage');
-            updateStats();
-
+            importCsvDataToStorage(csvData);
             alert(`${csvData.length}件のデータがCSVからインポートされました！`);
         } catch (error) {
             alert('CSVインポートに失敗しました: ' + error.message);
@@ -815,6 +798,28 @@ function importCsvData(e) {
 
     // ファイル選択をリセット
     e.target.value = '';
+}
+
+// CSVデータをストレージにインポート（ファイルまたはテキスト入力用の共通処理）
+function importCsvDataToStorage(csvData) {
+    // 既存データとマージするか確認
+    if (allData.length > 0) {
+        if (!confirm(`${csvData.length}件のデータを既存のデータに追加しますか？（キャンセルで上書きします）`)) {
+            allData = [];
+            cardStats = {};
+        }
+    }
+
+    // インポート
+    allData.push(...csvData);
+    saveData();
+    filteredData = [...allData];
+    updateCategoryFilter();
+    renderDataList();
+    updateTotalCards();
+    displayCard(0);
+    switchTab('manage');
+    updateStats();
 }
 
 // CSVテンプレートをダウンロード
@@ -833,6 +838,60 @@ function downloadCsvTemplate() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
+}
+
+// テキスト入力フォームの表示/非表示を切り替え
+function toggleCsvTextInput() {
+    const container = document.getElementById('csvTextInputContainer');
+    const btn = document.getElementById('toggleCsvTextInputBtn');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        btn.textContent = '📝 テキスト貼り付けを閉じる';
+    } else {
+        container.style.display = 'none';
+        btn.textContent = '📝 テキスト貼り付けで読み込み';
+        document.getElementById('csvTextInput').value = '';
+    }
+}
+
+// テキストからCSVをインポート
+function importCsvFromText() {
+    const csvText = document.getElementById('csvTextInput').value.trim();
+    
+    if (!csvText) {
+        alert('CSVデータが入力されていません。');
+        return;
+    }
+    
+    try {
+        const rows = csvText.split('\n').filter(row => row.trim());
+        
+        if (rows.length < 2) {
+            alert('エラー：ヘッダー行とデータ行が必要です。');
+            return;
+        }
+        
+        const jsonData = csvToJson(csvText);
+        
+        if (jsonData.length === 0) {
+            alert('エラー：CSVを解析できません。形式を確認してください。');
+            return;
+        }
+        
+        importCsvDataToStorage(jsonData);
+        
+        // 成功時、入力をクリア
+        document.getElementById('csvTextInput').value = '';
+        document.getElementById('csvTextInputContainer').style.display = 'none';
+        document.getElementById('toggleCsvTextInputBtn').textContent = '📝 テキスト貼り付けで読み込み';
+        
+        alert(`✓ ${jsonData.length}個のカードをインポートしました。`);
+        
+    } catch (error) {
+        console.error('CSV import error:', error);
+        alert(`エラー：${error.message}`);
+    }
 }
 
 // 元のimportData関数を別名に変更（後方互換性のため）
